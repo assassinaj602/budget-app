@@ -46,11 +46,11 @@ budget_app is a comprehensive personal finance manager built with Flutter and mo
 - Multiple chart types and time ranges
 
 ### 🎯 Budgets
-- Per-category or overall budgets
-- Real-time progress indicators
-- Alerts at thresholds (e.g., 80%)
+ - Per-category or overall budgets
+ - Real-time progress indicators
+ - Alerts at thresholds (e.g., 80%)
 
-### � Security & Utilities
+### 🔐 Security & Utilities
 - Biometric auth (Face ID / Touch ID / fingerprint)
 - Local notifications and reminders
 - PDF reports with charts, CSV export
@@ -108,22 +108,15 @@ flutter run
 ```
 
 ### Platform notes
-- Android/iOS: Ensure proper Android SDK/Xcode setup
 - Web: `flutter run -d chrome`
 - Desktop: Enable platform (Windows/Linux/macOS) in Flutter config
 
----
-
-## 🛠️ Tech Stack
-
 - Flutter 3 • Dart 3
 - Riverpod 2.4+ for state management
-- Hive/SQLite for local data (hive_flutter, sqflite, path_provider)
 - Charts: fl_chart, syncfusion_flutter_charts
 - Auth/Notifications: local_auth, flutter_local_notifications, timezone
 - Exports: pdf, printing, csv
 - UI/UX: google_fonts, lottie, shimmer, animations
-
 See `pubspec.yaml` for full dependency list.
 
 ---

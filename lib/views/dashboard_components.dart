@@ -783,8 +783,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-
-
   // Utility Methods
   Map<String, double> _calculateMonthlyData(List<Transaction> transactions) {
     final monthlyData = <String, double>{};

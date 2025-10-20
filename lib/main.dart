@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'views/theme/app_theme.dart';
 
 import 'views/splash_screen.dart';
+import 'views/onboarding/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/theme_provider_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/transaction.dart';
@@ -26,6 +28,9 @@ Future<void> main() async {
     print('CategoryAdapter registration error: $e');
   }
 
+  final prefs = await SharedPreferences.getInstance();
+  final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
+
   runApp(
     ProviderScope(
       child: Consumer(
@@ -35,7 +40,11 @@ Future<void> main() async {
             theme: appTheme,
             darkTheme: darkAppTheme,
             themeMode: themeMode,
-            home: const SplashScreen(),
+            home: seenOnboarding ? const SplashScreen() : const OnboardingScreen(),
+            routes: {
+              '/': (context) => const SplashScreen(),
+              '/onboarding': (context) => const OnboardingScreen(),
+            },
             debugShowCheckedModeBanner: false,
           );
         },

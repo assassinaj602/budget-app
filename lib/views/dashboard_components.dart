@@ -6,8 +6,13 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 import '../providers/app_provider.dart';
+import '../providers/derived_providers.dart';
 import 'month_selection_screen.dart';
-import 'add_transaction_form.dart';
+import 'add_transaction_modal.dart';
+import 'recurring_transactions_screen.dart';
+import 'category_management_screen.dart';
+import 'budget_goals_screen.dart';
+import 'enhanced_reports_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -44,9 +49,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(appProvider);
 
-    final monthlyData = _calculateMonthlyData(state.transactions);
-    final categoryData =
-        _calculateCategoryData(state.transactions, state.categories);
+    final monthlyData = ref.watch(monthlyTotalsProvider);
+    final categoryData = ref.watch(categoryTotalsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,93 +79,169 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBalanceCard(state, context),
-              const SizedBox(height: 20),
-              _buildEnhancedSpendingChart(
-                  monthlyData, state.transactions, state.categories, context),
-              const SizedBox(height: 20),
-              _buildQuickStatsWidget(state, context),
-              const SizedBox(height: 20),
-              _buildCategoryOverviewWidget(categoryData, context),
-              const SizedBox(height: 20),
-              _buildRecentTransactionsWidget(
-                  state.transactions, state.categories, context),
-            ],
-          ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(appProvider.notifier).loadData();
+          setState(() {
+            _animationController.reset();
+            _animationController.forward();
+          });
+        },
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: state.transactions.isEmpty
+              ? _buildEmptyState(context)
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBalanceCard(state, context),
+                      const SizedBox(height: 20),
+                      _buildQuickActionsSection(context),
+                      const SizedBox(height: 20),
+                      _buildEnhancedSpendingChart(monthlyData,
+                          state.transactions, state.categories, context),
+                      const SizedBox(height: 20),
+                      _buildQuickStatsWidget(state, context),
+                      const SizedBox(height: 20),
+                      _buildCategoryOverviewWidget(categoryData, context),
+                      const SizedBox(height: 20),
+                      _buildRecentTransactionsWidget(
+                          state.transactions, state.categories, context),
+                    ],
+                  ),
+                ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransactionModal(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Transaction'),
-        tooltip: 'Add new transaction',
-        elevation: 8,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // FAB is provided by the HomeScreen to avoid duplicate FABs when
+      // DashboardScreen is embedded as the body of HomeScreen.
     );
   }
 
-  void _showAddTransactionModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
+  void _showAddTransactionModal(BuildContext context) => showAddTransactionModal(context);
+
+  Widget _buildQuickActionsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        child: Column(
+        const SizedBox(height: 12),
+        // 2x2 Grid for first four actions; Reports placed below full width.
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.25,
           children: [
-            // Handle bar
+            _buildQuickActionTile(
+              icon: Icons.add_circle_outline,
+              label: 'Add Transaction',
+              color: Colors.blue,
+              onTap: () => _showAddTransactionModal(context),
+            ),
+            _buildQuickActionTile(
+              icon: Icons.repeat,
+              label: 'Add Recurring',
+              color: Colors.purple,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const RecurringTransactionsScreen()),
+                );
+              },
+            ),
+            _buildQuickActionTile(
+              icon: Icons.category,
+              label: 'Categories',
+              color: Colors.orange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const CategoryManagementScreen()),
+                );
+              },
+            ),
+            _buildQuickActionTile(
+              icon: Icons.flag,
+              label: 'Budget Goals',
+              color: Colors.teal,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const BudgetGoalsScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildQuickActionTile(
+          icon: Icons.bar_chart,
+          label: 'View Reports',
+          color: Colors.indigo,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const EnhancedReportsScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildQuickActionTile({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.35), width: 1.3),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+                color: color,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.grey.shade100,
-                      foregroundColor: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Add New Transaction',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            // Form
-            const Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: AddTransactionForm(),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
             ),
           ],
@@ -341,52 +421,77 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 children: [
                   // Enhanced Header
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.indigo.shade50,
-                              borderRadius: BorderRadius.circular(12),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.indigo.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.trending_up,
+                                color: Colors.indigo.shade600,
+                                size: 24,
+                              ),
                             ),
-                            child: Icon(Icons.trending_up,
-                                color: Colors.indigo.shade600, size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Monthly Spending Trends',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.indigo.shade700,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Monthly Spending Trends',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.indigo.shade700,
+                                        ),
+                                  ),
+                                  Text(
+                                    'Last 6 months analysis',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 14,
                                     ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                'Last 6 months analysis',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.indigo.shade100,
-                          borderRadius: BorderRadius.circular(8),
+                            ),
+                          ],
                         ),
-                        child: Icon(Icons.open_in_new,
-                            size: 18, color: Colors.indigo.shade700),
+                      ),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          // Secondary quick view navigation (card itself also navigates)
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const MonthSelectionScreen(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.open_in_new,
+                            size: 18,
+                            color: Colors.indigo.shade700,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -435,38 +540,60 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildEnhancedStatCard(
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isNarrow = constraints.maxWidth < 600;
+                            final cards = [
+                              _buildEnhancedStatCard(
                                 'Total Spent',
                                 totalSpending.toStringAsFixed(0),
                                 Colors.red.shade600,
                                 Icons.trending_down,
                                 '6 months',
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildEnhancedStatCard(
+                              _buildEnhancedStatCard(
                                 'Monthly Avg',
                                 averageSpending.toStringAsFixed(0),
                                 Colors.blue.shade600,
                                 Icons.bar_chart,
                                 'per month',
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildEnhancedStatCard(
+                              _buildEnhancedStatCard(
                                 'Transactions',
                                 '${transactions.length}',
                                 Colors.green.shade600,
                                 Icons.receipt_long,
                                 'total count',
                               ),
-                            ),
-                          ],
+                            ];
+
+                            if (isNarrow) {
+                              // Wrap into two columns (or single) when space is tight to avoid horizontal overflow.
+                              final columnCount =
+                                  constraints.maxWidth < 420 ? 1 : 2;
+                              final itemWidth = (constraints.maxWidth -
+                                      (columnCount - 1) * 12) /
+                                  columnCount;
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: cards
+                                    .map((c) =>
+                                        SizedBox(width: itemWidth, child: c))
+                                    .toList(),
+                              );
+                            }
+
+                            return Row(
+                              children: [
+                                Expanded(child: cards[0]),
+                                const SizedBox(width: 12),
+                                Expanded(child: cards[1]),
+                                const SizedBox(width: 12),
+                                Expanded(child: cards[2]),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -783,29 +910,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  // Utility Methods
-  Map<String, double> _calculateMonthlyData(List<Transaction> transactions) {
-    final monthlyData = <String, double>{};
-    for (final transaction in transactions) {
-      if (transaction.type == 'expense') {
-        final key = DateFormat('MMM yyyy').format(transaction.date);
-        monthlyData[key] = (monthlyData[key] ?? 0) + transaction.amount;
-      }
-    }
-    return monthlyData;
-  }
-
-  Map<String, double> _calculateCategoryData(
-      List<Transaction> transactions, List<Category> categories) {
-    final categoryData = <String, double>{};
-    for (final transaction in transactions) {
-      if (transaction.type == 'expense') {
-        categoryData[transaction.category] =
-            (categoryData[transaction.category] ?? 0) + transaction.amount;
-      }
-    }
-    return categoryData;
-  }
+  // Utility methods moved to providers/derived_providers.dart for memoization
 
   // DASHBOARD HELPER METHODS
 
@@ -925,19 +1030,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.pie_chart, color: Colors.orange.shade600),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Top Spending Categories',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.pie_chart, color: Colors.orange.shade600),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Top Spending Categories',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -1028,12 +1139,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Colors.grey.shade800,
+                    Flexible(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Colors.grey.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                     Container(
@@ -1110,19 +1225,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.history, color: Colors.teal.shade600),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Recent Transactions',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.history, color: Colors.teal.shade600),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Recent Transactions',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -1197,6 +1318,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
                 Text(
                   '${category.name} • ${DateFormat('MMM dd').format(transaction.date)}',
@@ -1204,6 +1327,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     fontSize: 12,
                     color: Colors.grey.shade600,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -1225,4 +1350,122 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   // End of dashboard helper methods
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 80,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Transactions Yet',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Start tracking your finances by\\nadding your first transaction',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => showAddTransactionModal(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Transaction'),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: Colors.amber.shade700,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Quick Tips',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTip('Track all your expenses and income'),
+                    _buildTip('Set budget goals to stay on track'),
+                    _buildTip('View spending trends with charts'),
+                    _buildTip('Export data for backup'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTip(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.check_circle,
+            size: 20,
+            color: Colors.green.shade600,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

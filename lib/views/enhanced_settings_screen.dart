@@ -4,10 +4,15 @@ import '../providers/theme_provider_riverpod.dart';
 import '../providers/currency_provider.dart';
 import '../providers/app_provider.dart';
 import '../utils/currencies.dart';
+import 'pin_lock_screen.dart';
 import 'currency_selector_screen.dart';
 import 'budget_goals_screen.dart';
 import 'category_management_screen.dart';
+import 'recurring_transactions_screen.dart';
 import '../services/advanced_export_service.dart';
+import '../services/notification_service.dart';
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 
 class EnhancedSettingsScreen extends ConsumerStatefulWidget {
   const EnhancedSettingsScreen({super.key});
@@ -20,9 +25,32 @@ class EnhancedSettingsScreen extends ConsumerStatefulWidget {
 class _EnhancedSettingsScreenState
     extends ConsumerState<EnhancedSettingsScreen> {
   bool _notificationsEnabled = true;
-  bool _biometricEnabled = false;
   bool _autoBackup = false;
   String _selectedLanguage = 'English';
+  Box? _settingsBox;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _settingsBox = await Hive.openBox('settings');
+    setState(() {
+      _notificationsEnabled =
+          _settingsBox!.get('notificationsEnabled', defaultValue: true);
+      _autoBackup = _settingsBox!.get('autoBackup', defaultValue: false);
+      _selectedLanguage =
+          _settingsBox!.get('language', defaultValue: 'English');
+    });
+  }
+
+  Future<void> _saveSetting(String key, dynamic value) async {
+    await _settingsBox?.put(key, value);
+  }
+
+  // Biometric toggle is centralized in authProvider; no local handler needed.
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +197,22 @@ class _EnhancedSettingsScreenState
                   },
                 ),
                 ListTile(
+                  leading: const Icon(Icons.repeat),
+                  title: const Text('Recurring Transactions'),
+                  subtitle:
+                      const Text('Manage subscriptions and regular payments'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const RecurringTransactionsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.category),
                   title: const Text('Manage Categories'),
                   subtitle:
@@ -216,34 +260,20 @@ class _EnhancedSettingsScreenState
                     ],
                   ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.fingerprint),
-                  title: const Text('Biometric Authentication'),
-                  subtitle: const Text(
-                      'Use fingerprint or face ID to secure your app'),
-                  trailing: Switch(
-                    value: _biometricEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        _biometricEnabled = value;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(value
-                              ? 'Biometric authentication enabled'
-                              : 'Biometric authentication disabled'),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                // Biometric authentication removed per requirements.
                 ListTile(
                   leading: const Icon(Icons.lock),
                   title: const Text('Change PIN'),
                   subtitle: const Text('Update your app access PIN'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    _showChangePinDialog(context);
+                  onTap: () async {
+                    // Navigate to PIN change flow
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PinLockScreen(mode: PinMode.changePin),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
@@ -300,9 +330,8 @@ class _EnhancedSettingsScreenState
                   trailing: Switch(
                     value: _autoBackup,
                     onChanged: (value) {
-                      setState(() {
-                        _autoBackup = value;
-                      });
+                      setState(() => _autoBackup = value);
+                      _saveSetting('autoBackup', value);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(value
@@ -389,9 +418,8 @@ class _EnhancedSettingsScreenState
                   trailing: Switch(
                     value: _notificationsEnabled,
                     onChanged: (value) {
-                      setState(() {
-                        _notificationsEnabled = value;
-                      });
+                      setState(() => _notificationsEnabled = value);
+                      _saveSetting('notificationsEnabled', value);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(value
@@ -475,10 +503,32 @@ class _EnhancedSettingsScreenState
                   title: const Text('Share App'),
                   subtitle: const Text('Tell your friends about this app'),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Share feature coming soon!')),
+                  onTap: () async {
+                    const repoUrl =
+                        'https://github.com/assassinaj602/budget-app';
+                    await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Share App'),
+                        content: SelectableText(repoUrl),
+                        actions: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close')),
+                          TextButton(
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                  const ClipboardData(text: repoUrl));
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Link copied to clipboard')));
+                            },
+                            child: const Text('Copy Link'),
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -589,29 +639,7 @@ class _EnhancedSettingsScreenState
               groupValue: _selectedLanguage,
               onChanged: (value) {
                 setState(() {
-                  _selectedLanguage = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Español'),
-              value: 'Español',
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Français'),
-              value: 'Français',
-              groupValue: _selectedLanguage,
-              onChanged: (value) {
-                setState(() {
-                  _selectedLanguage = value!;
+                  _selectedLanguage = 'English';
                 });
                 Navigator.pop(context);
               },
@@ -620,6 +648,16 @@ class _EnhancedSettingsScreenState
         ),
       ),
     );
+  }
+
+  // Save language after dialog closes
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    // Persist language when it changes (debounced minimal logic)
+    if (_settingsBox != null) {
+      _saveSetting('language', _selectedLanguage);
+    }
   }
 
   void _showCategoriesDialog() {
@@ -640,12 +678,40 @@ class _EnhancedSettingsScreenState
                 title: Text(category.name),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    // TODO: Implement category deletion
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Category deletion coming soon!')),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete category'),
+                        content: Text(
+                            'Delete category "${category.name}"? This will remove it from your local data.'),
+                        actions: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel')),
+                          TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Delete')),
+                        ],
+                      ),
                     );
+                    if (confirm == true) {
+                      try {
+                        await ref
+                            .read(appProvider.notifier)
+                            .deleteCategory(category.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text('Category "${category.name}" deleted')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Failed to delete category: $e')),
+                        );
+                      }
+                    }
                   },
                 ),
               );
@@ -719,20 +785,34 @@ class _EnhancedSettingsScreenState
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('CSV export coming soon!')),
-              );
+              final current = ref.read(appProvider);
+              try {
+                await AdvancedExportService.exportTransactionsToCSV(
+                    current.transactions, current.categories);
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data exported as CSV')));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('CSV export failed: $e')));
+              }
             },
             child: const Text('CSV'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('JSON export coming soon!')),
-              );
+              final current = ref.read(appProvider);
+              try {
+                await AdvancedExportService.createFullBackup(
+                    current.transactions, current.categories, {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data exported as JSON')));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('JSON export failed: $e')));
+              }
             },
             child: const Text('JSON'),
           ),
@@ -754,12 +834,42 @@ class _EnhancedSettingsScreenState
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Clear data feature coming soon!')),
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirm Clear All'),
+                  content: const Text(
+                      'This will attempt to clear local data (transactions & categories). This cannot be undone.'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Clear')),
+                  ],
+                ),
               );
+              if (confirmed == true) {
+                try {
+                  // Attempt to clear Hive boxes if available
+                  if (Hive.isBoxOpen('transactions')) {
+                    await Hive.box('transactions').clear();
+                  }
+                  if (Hive.isBoxOpen('categories')) {
+                    await Hive.box('categories').clear();
+                  }
+                  // Reset in-memory state
+                  await ref.read(appProvider.notifier).clearAllData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Local data cleared')));
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to clear data: $e')));
+                }
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Clear All'),
@@ -807,7 +917,6 @@ class _EnhancedSettingsScreenState
       ),
     );
   }
-
   void _showDeveloperDialog() {
     showDialog(
       context: context,
@@ -846,87 +955,6 @@ class _EnhancedSettingsScreenState
     );
   }
 
-  void _showChangePinDialog(BuildContext context) {
-    final TextEditingController currentPinController = TextEditingController();
-    final TextEditingController newPinController = TextEditingController();
-    final TextEditingController confirmPinController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Change PIN'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: currentPinController,
-                decoration: const InputDecoration(
-                  labelText: 'Current PIN',
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: newPinController,
-                decoration: const InputDecoration(
-                  labelText: 'New PIN',
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: confirmPinController,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New PIN',
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (newPinController.text == confirmPinController.text &&
-                  newPinController.text.length == 6) {
-                // In a real app, you'd verify the current PIN and save the new one
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PIN changed successfully!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PINs do not match or are invalid!'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Update PIN'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showNotificationSettings(BuildContext context) {
     showDialog(
       context: context,
@@ -943,6 +971,11 @@ class _EnhancedSettingsScreenState
                 onChanged: (value) {
                   setDialogState(() => _notificationsEnabled = value);
                   setState(() => _notificationsEnabled = value);
+                  if (value) {
+                    NotificationService().scheduleDailySummary(hour: 18, minute: 0);
+                  } else {
+                    NotificationService().cancelAllNotifications();
+                  }
                 },
               ),
               SwitchListTile(
@@ -964,6 +997,7 @@ class _EnhancedSettingsScreenState
                     initialTime: const TimeOfDay(hour: 18, minute: 0),
                   );
                   if (time != null) {
+                    NotificationService().scheduleDailySummary(hour: time.hour, minute: time.minute);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content:
@@ -1011,16 +1045,7 @@ class _EnhancedSettingsScreenState
                 _showImportDialog(context);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.backup),
-              title: const Text('Backup & Sync'),
-              subtitle: const Text('Cloud backup settings'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cloud backup coming soon!')),
-                );
-              },
-            ),
+            // Cloud sync removed for offline-only operation.
             ListTile(
               leading: const Icon(Icons.delete_forever, color: Colors.red),
               title: const Text('Clear All Data',
@@ -1083,7 +1108,7 @@ class _EnhancedSettingsScreenState
                   await AdvancedExportService.createFullBackup(
                     state.transactions,
                     state.categories,
-                    {}, // App settings
+                    {},
                   );
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1100,9 +1125,19 @@ class _EnhancedSettingsScreenState
               leading: const Icon(Icons.picture_as_pdf),
               title: const Text('PDF Report'),
               subtitle: const Text('Formatted report with charts'),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('PDF export coming soon!')),
+              onTap: () async {
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('PDF Report'),
+                    content: const Text(
+                        'PDF export will be available in a future update. For now, export JSON/CSV and use external tools to create reports.'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close')),
+                    ],
+                  ),
                 );
               },
             ),
@@ -1134,12 +1169,21 @@ class _EnhancedSettingsScreenState
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () {
-                // In a real app, you'd use file_picker package
+              onPressed: () async {
+                // In a real app, you'd use file_picker package. For now, show guidance.
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('File import functionality coming soon!')),
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Import Data'),
+                    content: const Text(
+                        'To import data, prepare a CSV or JSON export and place it in your device storage. File import will be added in a future update.'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close')),
+                    ],
+                  ),
                 );
               },
               icon: const Icon(Icons.file_open),

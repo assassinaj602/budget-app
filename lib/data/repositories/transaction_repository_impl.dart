@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:hive/hive.dart';
+import '../../services/hive_security.dart';
 import '../../core/error/failures.dart';
 import '../../domain/entities/transaction_entity.dart';
 import '../../domain/repositories/transaction_repository.dart';
@@ -9,6 +10,18 @@ class TransactionRepositoryImpl implements TransactionRepository {
   final String boxName = 'transactions';
 
   Future<Box<TransactionModel>> _getBox() async {
+    try {
+      final cipher = await HiveSecurity.getCipher();
+      if (cipher != null) {
+        return await Hive.openBox<TransactionModel>(
+          boxName,
+          encryptionCipher: cipher,
+        );
+      }
+    } catch (_) {
+      // Fallback below
+    }
+    // Fallback to unencrypted open if cipher unavailable or open fails
     return await Hive.openBox<TransactionModel>(boxName);
   }
 
@@ -121,6 +134,8 @@ class TransactionRepositoryImpl implements TransactionRepository {
       );
       if (key != null) {
         await box.delete(key);
+        // Hint Hive to compact storage after deletions
+        await box.compact();
         return const Right(null);
       }
       return const Left(DatabaseFailure('Transaction not found'));

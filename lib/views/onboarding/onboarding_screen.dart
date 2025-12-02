@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../main_navigation.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -31,7 +32,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenOnboarding', true);
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
   }
 
   @override
@@ -52,11 +55,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.account_balance_wallet, size: 96, color: Theme.of(context).primaryColor),
+                        Icon(Icons.account_balance_wallet,
+                            size: 96, color: Theme.of(context).primaryColor),
                         const SizedBox(height: 24),
-                        Text(p['title']!, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        Text(p['title']!,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 12),
-                        Text(p['subtitle']!, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                        Text(p['subtitle']!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium),
                       ],
                     ),
                   );
@@ -73,26 +83,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const Spacer(),
                   Row(
-                    children: List.generate(_pages.length, (i) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _index == i ? 12 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _index == i ? Theme.of(context).primaryColor : Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    )),
+                    children: List.generate(
+                        _pages.length,
+                        (i) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _index == i ? 12 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _index == i
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey.shade400,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            )),
                   ),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: () {
                       if (_index < _pages.length - 1) {
-                        _controller.nextPage(duration: const Duration(milliseconds: 250), curve: Curves.easeInOut);
+                        _controller.nextPage(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut);
                       } else {
                         _finishOnboarding();
                       }
                     },
-                    child: Text(_index < _pages.length - 1 ? 'Next' : 'Get started'),
+                    child: Text(
+                        _index < _pages.length - 1 ? 'Next' : 'Get started'),
                   ),
                 ],
               ),

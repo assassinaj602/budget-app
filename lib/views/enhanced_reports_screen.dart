@@ -274,17 +274,48 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
   }
 
   Widget _buildTrendsTab(List<Transaction> transactions) {
-    final monthlyData = <String, Map<String, double>>{};
-
-    for (final transaction in transactions) {
-      final monthKey = DateFormat('MMM yyyy').format(transaction.date);
-      if (!monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey] = {'income': 0.0, 'expense': 0.0};
+    // Group data based on _selectedTimeframe
+    final grouped = <String, Map<String, double>>{};
+    String makeKey(DateTime d) {
+      switch (_selectedTimeframe) {
+        case 'Week':
+          final startOfWeek = d.subtract(Duration(days: d.weekday - 1));
+          return 'Wk ${DateFormat('w').format(startOfWeek)} ${DateFormat('yyyy').format(startOfWeek)}';
+        case 'Month':
+          return DateFormat('MMM yyyy').format(d);
+        case 'Year':
+          return DateFormat('yyyy').format(d);
+        case 'All':
+        default:
+          return DateFormat('MMM yyyy').format(d);
       }
-      monthlyData[monthKey]![transaction.type] =
-          (monthlyData[monthKey]![transaction.type] ?? 0.0) +
-              transaction.amount;
     }
+
+    for (final t in transactions) {
+      final key = makeKey(t.date);
+      grouped.putIfAbsent(key, () => {'income': 0.0, 'expense': 0.0});
+      grouped[key]![t.type] = (grouped[key]![t.type] ?? 0.0) + t.amount;
+    }
+
+    final keys = grouped.keys.toList()..sort((a, b) {
+      // Attempt to sort by parsed date fragments
+      DateTime parseKey(String k) {
+        if (_selectedTimeframe == 'Year') {
+          return DateTime(int.tryParse(k) ?? 0);
+        }
+        // For week/month, fallback to first day of month
+        final parts = k.split(' ');
+        if (parts.length >= 2 && int.tryParse(parts.last) != null) {
+          try {
+            return DateFormat('MMM yyyy').parse('${parts[0]} ${parts[1]}');
+          } catch (_) {
+            return DateTime.now();
+          }
+        }
+        return DateTime.now();
+      }
+      return parseKey(a).compareTo(parseKey(b));
+    });
 
     return SingleChildScrollView(
       child: Padding(
@@ -299,7 +330,13 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Monthly Trends',
+                      _selectedTimeframe == 'Week'
+                          ? 'Weekly Trends'
+                          : _selectedTimeframe == 'Year'
+                              ? 'Yearly Trends'
+                              : _selectedTimeframe == 'All'
+                                  ? 'All-Time Trends'
+                                  : 'Monthly Trends',
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
@@ -329,14 +366,15 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                                 getTitlesWidget:
                                     (double value, TitleMeta meta) {
                                   final index = value.toInt();
-                                  if (index >= 0 &&
-                                      index < monthlyData.length) {
-                                    final key =
-                                        monthlyData.keys.elementAt(index);
+                                  if (index >= 0 && index < keys.length) {
+                                    final key = keys[index];
+                                    final label = _selectedTimeframe == 'Year'
+                                        ? key
+                                        : key.split(' ')[0];
                                     return Padding(
                                       padding: const EdgeInsets.only(top: 8.0),
                                       child: Text(
-                                        key.split(' ')[0], // Show only month
+                                        label,
                                         style: const TextStyle(fontSize: 10),
                                       ),
                                     );
@@ -360,24 +398,21 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                           ),
                           borderData: FlBorderData(show: true),
                           minX: 0,
-                          maxX: (monthlyData.length - 1).toDouble(),
+                          maxX: (keys.length - 1).toDouble(),
                           minY: 0,
-                          maxY: monthlyData.values
+                          maxY: grouped.values
                                   .expand((m) => m.values)
                                   .isNotEmpty
-                              ? monthlyData.values
+                              ? grouped.values
                                       .expand((m) => m.values)
-                                      .reduce((a, b) => a > b ? a : b) *
-                                  1.2
+                                      .reduce((a, b) => a > b ? a : b) * 1.2
                               : 1000,
                           lineBarsData: [
                             LineChartBarData(
-                              spots: monthlyData.entries.map((entry) {
-                                final index = monthlyData.keys
-                                    .toList()
-                                    .indexOf(entry.key);
-                                return FlSpot(index.toDouble(),
-                                    entry.value['income'] ?? 0.0);
+                              spots: keys.map((k) {
+                                final i = keys.indexOf(k);
+                                return FlSpot(
+                                    i.toDouble(), grouped[k]!['income'] ?? 0.0);
                               }).toList(),
                               isCurved: true,
                               color: Colors.green.shade600,
@@ -389,12 +424,10 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                               ),
                             ),
                             LineChartBarData(
-                              spots: monthlyData.entries.map((entry) {
-                                final index = monthlyData.keys
-                                    .toList()
-                                    .indexOf(entry.key);
-                                return FlSpot(index.toDouble(),
-                                    entry.value['expense'] ?? 0.0);
+                              spots: keys.map((k) {
+                                final i = keys.indexOf(k);
+                                return FlSpot(
+                                    i.toDouble(), grouped[k]!['expense'] ?? 0.0);
                               }).toList(),
                               isCurved: true,
                               color: Colors.red.shade600,
@@ -478,153 +511,148 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
       ..sort((a, b) => b.value['amount'].compareTo(a.value['amount']));
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            if (sortedCategories.isNotEmpty) ...[
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Top Categories',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: PieChart(
-                          PieChartData(
-                            sections: sortedCategories.take(6).map((entry) {
-                              final index = sortedCategories.indexOf(entry);
-                              final colors = [
-                                Colors.blue.shade600,
-                                Colors.red.shade600,
-                                Colors.green.shade600,
-                                Colors.orange.shade600,
-                                Colors.purple.shade600,
-                                Colors.teal.shade600,
-                              ];
-                              final total = sortedCategories.fold(
-                                  0.0, (sum, e) => sum + e.value['amount']);
-                              final percentage =
-                                  (entry.value['amount'] / total * 100);
-
-                              return PieChartSectionData(
-                                color: colors[index % colors.length],
-                                value: entry.value['amount'],
-                                title: '${percentage.toStringAsFixed(1)}%',
-                                radius: 60,
-                                titleStyle: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              );
-                            }).toList(),
-                            centerSpaceRadius: 40,
-                            sectionsSpace: 2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Card(
-                  elevation: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Category Breakdown',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: sortedCategories.length,
-                          itemBuilder: (context, index) {
-                            final entry = sortedCategories[index];
-                            final category =
-                                entry.value['category'] as Category;
-                            final amount = entry.value['amount'] as double;
-                            final count = entry.value['count'] as int;
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          if (sortedCategories.isNotEmpty) ...[
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Top Categories',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 200,
+                      child: PieChart(
+                        PieChartData(
+                          sections: sortedCategories.take(6).map((entry) {
+                            final index = sortedCategories.indexOf(entry);
+                            final colors = [
+                              Colors.blue.shade600,
+                              Colors.red.shade600,
+                              Colors.green.shade600,
+                              Colors.orange.shade600,
+                              Colors.purple.shade600,
+                              Colors.teal.shade600,
+                            ];
                             final total = sortedCategories.fold(
                                 0.0, (sum, e) => sum + e.value['amount']);
-                            final percentage = (amount / total * 100);
+                            final percentage =
+                                (entry.value['amount'] / total * 100);
 
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.red.shade100,
-                                child: Icon(category.icon,
-                                    color: Colors.red.shade700),
-                              ),
-                              title: Text(category.name),
-                              subtitle: Text('$count transactions'),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    amount.toStringAsFixed(0),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${percentage.toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                            return PieChartSectionData(
+                              color: colors[index % colors.length],
+                              value: entry.value['amount'],
+                              title: '${percentage.toStringAsFixed(1)}%',
+                              radius: 60,
+                              titleStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             );
-                          },
+                          }).toList(),
+                          centerSpaceRadius: 40,
+                          sectionsSpace: 2,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ] else
-              const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.pie_chart, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('No category data available'),
+                    ),
                   ],
                 ),
               ),
-          ],
-        ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Category Breakdown',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: sortedCategories.length,
+                      itemBuilder: (context, index) {
+                        final entry = sortedCategories[index];
+                        final category = entry.value['category'] as Category;
+                        final amount = entry.value['amount'] as double;
+                        final count = entry.value['count'] as int;
+                        final total = sortedCategories.fold(
+                            0.0, (sum, e) => sum + e.value['amount']);
+                        final percentage = (amount / total * 100);
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.red.shade100,
+                            child:
+                                Icon(category.icon, color: Colors.red.shade700),
+                          ),
+                          title: Text(category.name),
+                          subtitle: Text('$count transactions'),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                amount.toStringAsFixed(0),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                '${percentage.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else
+            const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.pie_chart, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('No category data available'),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildExportTab(List<Transaction> transactions) {
     final state = ref.watch(appProvider);
-
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

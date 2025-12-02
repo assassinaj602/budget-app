@@ -105,7 +105,7 @@ class _CategoryManagementScreenState
                   Container(
                     height: 50,
                     width: 1,
-                    color: Colors.grey.shade300,
+                    color: Theme.of(context).dividerColor,
                   ),
                   Expanded(
                     child: _buildStatItem(
@@ -232,7 +232,7 @@ class _CategoryManagementScreenState
           title,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade600,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
@@ -253,7 +253,7 @@ class _CategoryManagementScreenState
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Color(category.colorValue).withOpacity(0.2),
+          backgroundColor: Color(category.colorValue).withOpacity(0.18),
           child: Icon(
             category.icon,
             color: Color(category.colorValue),
@@ -266,8 +266,14 @@ class _CategoryManagementScreenState
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$transactionCount transactions'),
-            Text('Total spent: ${totalSpent.toStringAsFixed(0)}'),
+            Text('$transactionCount transactions',
+                style: TextStyle(
+                    color:
+                        Theme.of(context).colorScheme.onSurfaceVariant)),
+            Text('Total spent: ${totalSpent.toStringAsFixed(0)}',
+                style: TextStyle(
+                    color:
+                        Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
         trailing: PopupMenuButton<String>(

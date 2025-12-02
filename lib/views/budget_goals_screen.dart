@@ -46,11 +46,15 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
                       Icon(Icons.account_balance_wallet,
                           color: AppColors.primary, size: 28),
                       const SizedBox(width: 12),
-                      Text(
-                        'Monthly Budget Overview',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Monthly Budget Overview',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -88,11 +92,15 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
                       Icon(Icons.category,
                           color: AppColors.secondary, size: 28),
                       const SizedBox(width: 12),
-                      Text(
-                        'Category Budgets',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Category Budgets',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -146,11 +154,15 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
                     children: [
                       Icon(Icons.pie_chart, color: AppColors.info, size: 28),
                       const SizedBox(width: 12),
-                      Text(
-                        'Budget Summary',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Budget Summary',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -189,11 +201,15 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
                     children: [
                       Icon(Icons.lightbulb, color: AppColors.warning, size: 28),
                       const SizedBox(width: 12),
-                      Text(
-                        'Smart Suggestions',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                      Expanded(
+                        child: Text(
+                          'Smart Suggestions',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -231,7 +247,7 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Color(category.colorValue).withOpacity(0.2),
+            backgroundColor: Color(category.colorValue).withOpacity(0.18),
             child: Icon(
               category.icon,
               color: Color(category.colorValue),
@@ -260,6 +276,12 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
                       vertical: 8,
                     ),
                     border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -293,7 +315,7 @@ class _BudgetGoalsScreenState extends ConsumerState<BudgetGoalsScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withOpacity(0.14),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(

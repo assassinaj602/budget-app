@@ -3,27 +3,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
+import '../models/transaction_template.dart';
+import '../models/recurring_transaction.dart';
 
 class AppState {
   final ThemeMode themeMode;
   final List<Transaction> transactions;
   final List<Category> categories;
+  final List<TransactionTemplate> templates;
+  final List<RecurringTransaction> recurringTransactions;
 
   const AppState({
     this.themeMode = ThemeMode.system,
     this.transactions = const [],
     this.categories = const [],
+    this.templates = const [],
+    this.recurringTransactions = const [],
   });
 
   AppState copyWith({
     ThemeMode? themeMode,
     List<Transaction>? transactions,
     List<Category>? categories,
+    List<TransactionTemplate>? templates,
+    List<RecurringTransaction>? recurringTransactions,
   }) {
     return AppState(
       themeMode: themeMode ?? this.themeMode,
       transactions: transactions ?? this.transactions,
       categories: categories ?? this.categories,
+      templates: templates ?? this.templates,
+      recurringTransactions:
+          recurringTransactions ?? this.recurringTransactions,
     );
   }
 }
@@ -48,8 +59,14 @@ class AppNotifier extends StateNotifier<AppState> {
     try {
       final transactionsBox = await Hive.openBox<Transaction>('transactions');
       final categoriesBox = await Hive.openBox<Category>('categories');
+      final templatesBox = await Hive.openBox<TransactionTemplate>('templates');
+      final recurringBox =
+          await Hive.openBox<RecurringTransaction>('recurring_transactions');
 
       List<Category> categories = categoriesBox.values.toList();
+      List<TransactionTemplate> templates = templatesBox.values.toList();
+      List<RecurringTransaction> recurringTransactions =
+          recurringBox.values.toList();
 
       // Add default categories if empty
       if (categories.isEmpty) {
@@ -102,9 +119,49 @@ class AppNotifier extends StateNotifier<AppState> {
         }
       }
 
+      // Add default templates if empty
+      if (templates.isEmpty) {
+        templates = [
+          TransactionTemplate(
+            title: 'Morning Coffee',
+            amount: 5.00,
+            category: 'Food',
+            type: 'expense',
+            isDefault: true,
+          ),
+          TransactionTemplate(
+            title: 'Lunch',
+            amount: 15.00,
+            category: 'Food',
+            type: 'expense',
+            isDefault: true,
+          ),
+          TransactionTemplate(
+            title: 'Fuel',
+            amount: 50.00,
+            category: 'Transport',
+            type: 'expense',
+            isDefault: true,
+          ),
+          TransactionTemplate(
+            title: 'Monthly Salary',
+            amount: 5000.00,
+            category: 'Salary',
+            type: 'income',
+            isDefault: true,
+          ),
+        ];
+
+        for (final template in templates) {
+          await templatesBox.add(template);
+        }
+      }
+
       state = state.copyWith(
         transactions: transactionsBox.values.toList(),
         categories: categories,
+        templates: templates,
+        recurringTransactions: recurringTransactions,
       );
     } catch (e) {
       debugPrint('Error loading data: $e');
@@ -121,6 +178,41 @@ class AppNotifier extends StateNotifier<AppState> {
       );
     } catch (e) {
       debugPrint('Error adding transaction: $e');
+    }
+  }
+
+  Future<void> updateTransaction(Transaction updatedTransaction) async {
+    try {
+      final box = await Hive.openBox<Transaction>('transactions');
+      final transactions = [...state.transactions];
+      final index =
+          transactions.indexWhere((t) => t.id == updatedTransaction.id);
+
+      if (index != -1) {
+        transactions[index] = updatedTransaction;
+        await box.putAt(index, updatedTransaction);
+
+        state = state.copyWith(transactions: transactions);
+      }
+    } catch (e) {
+      debugPrint('Error updating transaction: $e');
+    }
+  }
+
+  Future<void> deleteTransaction(String transactionId) async {
+    try {
+      final box = await Hive.openBox<Transaction>('transactions');
+      final transactions = [...state.transactions];
+      final index = transactions.indexWhere((t) => t.id == transactionId);
+
+      if (index != -1) {
+        transactions.removeAt(index);
+        await box.deleteAt(index);
+
+        state = state.copyWith(transactions: transactions);
+      }
+    } catch (e) {
+      debugPrint('Error deleting transaction: $e');
     }
   }
 
@@ -168,6 +260,115 @@ class AppNotifier extends StateNotifier<AppState> {
       }
     } catch (e) {
       debugPrint('Error deleting category: $e');
+    }
+  }
+
+  Future<void> addTemplate(TransactionTemplate template) async {
+    try {
+      final box = await Hive.openBox<TransactionTemplate>('templates');
+      await box.add(template);
+
+      state = state.copyWith(
+        templates: [...state.templates, template],
+      );
+    } catch (e) {
+      debugPrint('Error adding template: $e');
+    }
+  }
+
+  Future<void> deleteTemplate(String templateId) async {
+    try {
+      final box = await Hive.openBox<TransactionTemplate>('templates');
+      final templates = [...state.templates];
+      final index = templates.indexWhere((t) => t.id == templateId);
+
+      if (index != -1) {
+        templates.removeAt(index);
+        await box.deleteAt(index);
+
+        state = state.copyWith(templates: templates);
+      }
+    } catch (e) {
+      debugPrint('Error deleting template: $e');
+    }
+  }
+
+  // Recurring Transaction Methods
+  Future<void> addRecurringTransaction(RecurringTransaction recurring) async {
+    try {
+      final box =
+          await Hive.openBox<RecurringTransaction>('recurring_transactions');
+      await box.add(recurring);
+
+      state = state.copyWith(
+        recurringTransactions: [...state.recurringTransactions, recurring],
+      );
+    } catch (e) {
+      debugPrint('Error adding recurring transaction: $e');
+    }
+  }
+
+  Future<void> updateRecurringTransaction(
+      RecurringTransaction updatedRecurring) async {
+    try {
+      final box =
+          await Hive.openBox<RecurringTransaction>('recurring_transactions');
+      final recurring = [...state.recurringTransactions];
+      final index = recurring.indexWhere((r) => r.id == updatedRecurring.id);
+
+      if (index != -1) {
+        recurring[index] = updatedRecurring;
+        await box.putAt(index, updatedRecurring);
+
+        state = state.copyWith(recurringTransactions: recurring);
+      }
+    } catch (e) {
+      debugPrint('Error updating recurring transaction: $e');
+    }
+  }
+
+  Future<void> deleteRecurringTransaction(String recurringId) async {
+    try {
+      final box =
+          await Hive.openBox<RecurringTransaction>('recurring_transactions');
+      final recurring = [...state.recurringTransactions];
+      final index = recurring.indexWhere((r) => r.id == recurringId);
+
+      if (index != -1) {
+        recurring.removeAt(index);
+        await box.deleteAt(index);
+
+        state = state.copyWith(recurringTransactions: recurring);
+      }
+    } catch (e) {
+      debugPrint('Error deleting recurring transaction: $e');
+    }
+  }
+
+  /// Clear all local data (transactions and categories) and reset app state.
+  Future<void> clearAllData() async {
+    try {
+      // Clear transactions
+      if (Hive.isBoxOpen('transactions')) {
+        final txBox = Hive.box<Transaction>('transactions');
+        await txBox.clear();
+      } else {
+        final txBox = await Hive.openBox<Transaction>('transactions');
+        await txBox.clear();
+      }
+
+      // Clear categories
+      if (Hive.isBoxOpen('categories')) {
+        final catBox = Hive.box<Category>('categories');
+        await catBox.clear();
+      } else {
+        final catBox = await Hive.openBox<Category>('categories');
+        await catBox.clear();
+      }
+
+      state = const AppState();
+    } catch (e) {
+      debugPrint('Error clearing data: $e');
     }
   }
 }

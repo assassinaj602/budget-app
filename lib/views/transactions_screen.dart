@@ -13,7 +13,8 @@ class TransactionsScreen extends ConsumerStatefulWidget {
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
+  with AutomaticKeepAliveClientMixin {
   String _selectedFilter = 'All'; // All, Income, Expense
   String _selectedSort = 'Date'; // Date, Amount, Category
   String _searchQuery = '';
@@ -45,7 +46,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       filtered.sort((a, b) => b.date.compareTo(a.date));
     } else if (_selectedSort == 'Amount') {
       filtered.sort((a, b) => b.amount.compareTo(a.amount));
-    } else if (_selectedSort == 'Category') {
+                            return TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOut,
+                              tween: Tween(begin: 0, end: 1),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(0, (1 - value) * 12),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Card(
       filtered.sort((a, b) => a.category.compareTo(b.category));
     }
 
@@ -74,6 +88,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final state = ref.watch(appProvider);
     final currency = ref.watch(currencyProvider);
     final transactions = _getFilteredTransactions(state.transactions);
@@ -123,170 +138,170 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
       ),
       body: transactions.isEmpty
           ? _buildEmptyState()
-          : Column(
-              children: [
-                // Summary Header
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '${transactions.length} Transactions',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildSummaryCard(
-                            'Income',
-                            totalIncome,
-                            Icons.arrow_downward,
-                            Colors.green.shade300,
-                            currency,
-                          ),
-                          Container(
-                            width: 1,
-                            height: 40,
-                            color: Colors.white30,
-                          ),
-                          _buildSummaryCard(
-                            'Expense',
-                            totalExpense,
-                            Icons.arrow_upward,
-                            Colors.red.shade300,
-                            currency,
-                          ),
-                          Container(
-                            width: 1,
-                            height: 40,
-                            color: Colors.white30,
-                          ),
-                          _buildSummaryCard(
-                            'Balance',
-                            totalIncome - totalExpense,
-                            Icons.account_balance_wallet,
-                            Colors.white,
-                            currency,
-                          ),
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).primaryColor.withOpacity(0.8),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-
-                // Filter and Sort Bar
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _buildFilterChip('All'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('Income'),
-                              const SizedBox(width: 8),
-                              _buildFilterChip('Expense'),
-                            ],
-                          ),
-                        ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: PopupMenuButton<String>(
-                          icon: Icon(
-                            Icons.sort,
-                            color: Theme.of(context).primaryColor,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '${transactions.length} Transactions',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
                           ),
-                          tooltip: 'Sort Options',
-                          onSelected: (value) {
-                            setState(() {
-                              _selectedSort = value;
-                            });
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'Date',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.date_range, size: 18),
-                                  const SizedBox(width: 8),
-                                  const Text('Sort by Date'),
-                                  if (_selectedSort == 'Date')
-                                    const SizedBox(width: 8),
-                                  if (_selectedSort == 'Date')
-                                    const Icon(Icons.check,
-                                        size: 16, color: Colors.green),
-                                ],
-                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildSummaryCard(
+                              'Income',
+                              totalIncome,
+                              Icons.arrow_downward,
+                              Colors.green.shade300,
+                              currency,
                             ),
-                            PopupMenuItem(
-                              value: 'Amount',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.attach_money, size: 18),
-                                  const SizedBox(width: 8),
-                                  const Text('Sort by Amount'),
-                                  if (_selectedSort == 'Amount')
-                                    const SizedBox(width: 8),
-                                  if (_selectedSort == 'Amount')
-                                    const Icon(Icons.check,
-                                        size: 16, color: Colors.green),
-                                ],
-                              ),
+                            Container(
+                              width: 1,
+                              height: 40,
+                              color: Colors.white30,
                             ),
-                            PopupMenuItem(
-                              value: 'Category',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.category, size: 18),
-                                  const SizedBox(width: 8),
-                                  const Text('Sort by Category'),
-                                  if (_selectedSort == 'Category')
-                                    const SizedBox(width: 8),
-                                  if (_selectedSort == 'Category')
-                                    const Icon(Icons.check,
-                                        size: 16, color: Colors.green),
-                                ],
-                              ),
+                            _buildSummaryCard(
+                              'Expense',
+                              totalExpense,
+                              Icons.arrow_upward,
+                              Colors.red.shade300,
+                              currency,
+                            ),
+                            Container(
+                              width: 1,
+                              height: 40,
+                              color: Colors.white30,
+                            ),
+                            _buildSummaryCard(
+                              'Balance',
+                              totalIncome - totalExpense,
+                              Icons.account_balance_wallet,
+                              Colors.white,
+                              currency,
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-
-                // Transactions List
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildFilterChip('All'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Income'),
+                                const SizedBox(width: 8),
+                                _buildFilterChip('Expense'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: PopupMenuButton<String>(
+                            icon: Icon(
+                              Icons.sort,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            tooltip: 'Sort Options',
+                            onSelected: (value) {
+                              setState(() {
+                                _selectedSort = value;
+                              });
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'Date',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.date_range, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text('Sort by Date'),
+                                    if (_selectedSort == 'Date')
+                                      const SizedBox(width: 8),
+                                    if (_selectedSort == 'Date')
+                                      const Icon(Icons.check,
+                                          size: 16, color: Colors.green),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'Amount',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.attach_money, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text('Sort by Amount'),
+                                    if (_selectedSort == 'Amount')
+                                      const SizedBox(width: 8),
+                                    if (_selectedSort == 'Amount')
+                                      const Icon(Icons.check,
+                                          size: 16, color: Colors.green),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'Category',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.category, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text('Sort by Category'),
+                                    if (_selectedSort == 'Category')
+                                      const SizedBox(width: 8),
+                                    if (_selectedSort == 'Category')
+                                      const Icon(Icons.check,
+                                          size: 16, color: Colors.green),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList.separated(
                     itemCount: groupedTransactions.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 0),
                     itemBuilder: (context, index) {
                       final dateKey = groupedTransactions.keys.elementAt(index);
                       final dayTransactions = groupedTransactions[dateKey]!;
@@ -300,7 +315,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Date Header
                           Padding(
                             padding: const EdgeInsets.only(
                                 left: 4, top: 8, bottom: 12),
@@ -328,11 +342,20 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                               ],
                             ),
                           ),
-
-                          // Transactions for this day
                           ...dayTransactions.map((transaction) {
-                            final category = state.categories.isNotEmpty
-                                ? state.categories.firstWhere(
+                            Category category;
+                            if (state.categories.isEmpty) {
+                              category = Category(
+                                id: 'unknown',
+                                name: 'Unknown',
+                                iconCode: Icons.help_outline.codePoint,
+                                colorValue: Colors.grey.value,
+                              );
+                            } else {
+                              category = state.categories.firstWhere(
+                                (c) => c.name == transaction.category,
+                                orElse: () {
+                                  return state.categories.firstWhere(
                                     (c) => c.id == transaction.category,
                                     orElse: () => Category(
                                       id: 'unknown',
@@ -340,13 +363,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                                       iconCode: Icons.help_outline.codePoint,
                                       colorValue: Colors.grey.value,
                                     ),
-                                  )
-                                : Category(
-                                    id: 'unknown',
-                                    name: 'Unknown',
-                                    iconCode: Icons.help_outline.codePoint,
-                                    colorValue: Colors.grey.value,
                                   );
+                                },
+                              );
+                            }
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
@@ -458,6 +478,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   Widget _buildEmptyState() {
     return Center(

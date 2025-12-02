@@ -38,12 +38,18 @@ budget_app is a comprehensive personal finance manager built with Flutter and mo
 - Custom categories with color and icons
 - Notes and optional receipt images
 - Recurring transactions (daily/weekly/monthly/yearly)
+- Unified quick-add modal from anywhere (FAB, nav, dashboard)
+- Searchable category Autocomplete for faster selection
+- Inline bottom sheet date picker for rapid date changes
+- Two-decimal amount enforcement & keyboard optimizations
 
 ### 📊 Analytics & Insights
 - Income vs Expense overview (monthly)
 - Category breakdown with top spenders
 - Recent activity and trends
 - Multiple chart types and time ranges
+- Memoized monthly & category totals (performance)
+- Animated transaction list entries (smooth state feedback)
 
 ### 🎯 Budgets
  - Per-category or overall budgets
@@ -55,6 +61,8 @@ budget_app is a comprehensive personal finance manager built with Flutter and mo
 - Local notifications and reminders
 - PDF reports with charts, CSV export
 - Multi-currency support
+- Encrypted Hive box for transactions (secure local storage)
+- PIN lock with timeout & improved back navigation handling
 
 ---
 
@@ -141,6 +149,16 @@ docs/
 flutter test
 ```
 
+### Planned / In Progress Enhancements
+- Incremental aggregates stored in `AppState` for O(1) reads
+- Pagination + `LazyBox` adoption for large data sets
+- Attachments image compression & path storage
+- Material 3 surface container theme refinements
+- Advanced recurrence: skip-once & auto-catch-up logic
+- Quiet hours for notification scheduling
+- Provider, integration & golden tests expansion
+- Minimal logging abstraction (replacing raw prints)
+
 ---
 
 ## �️ Roadmap
@@ -151,6 +169,16 @@ flutter test
 - Web dashboard
 
 Track ongoing updates in the repo's markdown logs listed above.
+
+### Recent Implementations
+- Category Autocomplete
+- Inline CalendarDatePicker sheet
+- SliverList conversion with keep-alive
+- Transaction item fade/slide animations
+- Hive AES encryption (secure key via flutter_secure_storage)
+- Memoized derived totals providers
+- Quick-add tooltip on Transactions tab
+- PopScope migration for lock screen
 
 ---
 

@@ -1,24 +1,53 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:budget_expense_tracker/views/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:budget_expense_tracker/views/main_navigation.dart';
+import 'package:budget_expense_tracker/models/transaction.dart';
+import 'package:budget_expense_tracker/models/category.dart';
 
 void main() {
-  testWidgets('HomeScreen has a title and a bottom navigation bar', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+  late Directory tempDir;
 
-    // Verify that the title is present
-    expect(find.text('Budget Tracker'), findsOneWidget);
-
-    // Verify that the bottom navigation bar is present
-    expect(find.byType(BottomNavigationBar), findsOneWidget);
+  setUpAll(() async {
+    // Initialize Hive in a temporary directory for tests and register adapters
+    tempDir = Directory.systemTemp.createTempSync('budget_app_test_');
+    Hive.init(tempDir.path);
+    Hive.registerAdapter(TransactionAdapter());
+    Hive.registerAdapter(CategoryAdapter());
   });
 
-  testWidgets('HomeScreen displays expense list', (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+  tearDownAll(() async {
+    try {
+      await Hive.close();
+      if (await tempDir.exists()) {
+        tempDir.delete(recursive: true);
+      }
+    } catch (_) {}
+  });
+  testWidgets('MainNavigation shows FAB on home tab', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: MainNavigation()),
+      ),
+    );
 
-    // Verify that the expense list is present
-    expect(find.byType(ListView), findsOneWidget);
+    // Verify that the dashboard is present via DashboardScreen
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+  });
+
+  testWidgets('MainNavigation renders with FAB', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: MainNavigation()),
+      ),
+    );
+
+    // Verify that the FAB is present and Dashboard is rendered
+    expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 }

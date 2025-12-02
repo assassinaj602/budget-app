@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'main_navigation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
+import 'pin_lock_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final bool seenOnboarding;
+
+  const SplashScreen({super.key, required this.seenOnboarding});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -29,11 +34,24 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
-        );
+        if (!widget.seenOnboarding) {
+          Navigator.of(context).pushReplacementNamed('/onboarding');
+          return;
+        }
+        // After onboarding, gate by PIN if set
+        final container = ProviderScope.containerOf(context, listen: false);
+        final auth = container.read(authProvider);
+        if (auth.hasPin && auth.locked) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const PinLockScreen(mode: PinMode.unlock)),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
+          );
+        }
       }
     });
   }
@@ -46,13 +64,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final gradientColors = [
+      cs.primary,
+      cs.primary.withOpacity(0.85),
+    ];
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF4F5BD5), Color(0xFF0072ff)],
+            colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -77,11 +100,11 @@ class _SplashScreenState extends State<SplashScreen>
                             padding: const EdgeInsets.symmetric(
                                 vertical: 40, horizontal: 24),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: cs.surface.withOpacity(0.18),
                               borderRadius: BorderRadius.circular(32),
                               border: Border.all(
-                                  color: Colors.white.withOpacity(0.25),
-                                  width: 1.5),
+                                  color: cs.onSurface.withOpacity(0.12),
+                                  width: 1.2),
                               boxShadow: const [
                                 BoxShadow(
                                   color: Colors.black12,
@@ -129,8 +152,7 @@ class _SplashScreenState extends State<SplashScreen>
                                             child: Icon(
                                               Icons.pie_chart_rounded,
                                               size: 38,
-                                              color: Colors.amberAccent
-                                                  .withOpacity(0.85),
+                                              color: cs.secondary,
                                             ),
                                           ),
                                         );
@@ -149,13 +171,11 @@ class _SplashScreenState extends State<SplashScreen>
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 28,
-                                        color: Colors.white
-                                            .withOpacity(_fadeAnim.value),
+                                        color: cs.onPrimary.withOpacity(_fadeAnim.value),
                                         letterSpacing: 1.1,
                                         shadows: [
                                           Shadow(
-                                            color:
-                                                Colors.indigo.withOpacity(0.25),
+                                            color: cs.onPrimary.withOpacity(0.25),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
@@ -184,19 +204,19 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 1,
                       margin: const EdgeInsets.symmetric(
                           horizontal: 80, vertical: 8),
-                      color: Colors.white.withOpacity(0.18),
+                      color: cs.onPrimary.withOpacity(0.18),
                     ),
                     Text(
                       'Developed By Muhammad Assad Ullah',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: cs.onPrimary.withOpacity(0.85),
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
                         letterSpacing: 0.4,
                         shadows: [
                           Shadow(
-                            color: Colors.indigo.withOpacity(0.12),
+                            color: cs.onPrimary.withOpacity(0.12),
                             blurRadius: 2,
                           ),
                         ],

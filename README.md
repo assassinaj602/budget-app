@@ -161,6 +161,14 @@ flutter test
 
 ---
 
+## 📚 Documentation
+
+This `README.md` is the canonical documentation for the app. All prior markdown notes and logs have been consolidated here so the codebase can stay tidy. If you remove other `.md` files from the repository, you will still have everything you need (features, setup, roadmap) in this document.
+
+For deeper changelogs or release notes, consider tracking them in GitHub Releases going forward.
+
+---
+
 ## �️ Roadmap
 
 - Cloud sync

@@ -26,7 +26,6 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
     super.dispose();
   }
 
-
   void _onSubmit() async {
     final auth = ref.read(authProvider.notifier);
     switch (widget.mode) {
@@ -51,7 +50,8 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
           setState(() => _error = 'PIN must match and be 4+ digits');
           return;
         }
-        final ok = await auth.changePin(currentPin: _currentPin.text, newPin: _newPin.text);
+        final ok = await auth.changePin(
+            currentPin: _currentPin.text, newPin: _newPin.text);
         if (ok) {
           if (mounted) Navigator.pop(context, true);
         } else {
@@ -102,13 +102,21 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
                               color: Colors.indigo,
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.lock, color: Colors.white, size: 36),
+                            child: const Icon(Icons.lock,
+                                color: Colors.white, size: 36),
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            isUnlock ? 'Enter PIN to Continue' : (widget.mode == PinMode.setPin ? 'Create Secure PIN' : 'Update Your PIN'),
+                            isUnlock
+                                ? 'Enter PIN to Continue'
+                                : (widget.mode == PinMode.setPin
+                                    ? 'Create Secure PIN'
+                                    : 'Update Your PIN'),
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -133,7 +141,8 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.error, color: Colors.red.shade700, size: 20),
+                            Icon(Icons.error,
+                                color: Colors.red.shade700, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -192,7 +201,8 @@ class _PinLockScreenState extends ConsumerState<PinLockScreen> {
                         ),
                         child: Text(
                           isUnlock ? 'UNLOCK' : 'SAVE PIN',
-                          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
                       ),
                     ),

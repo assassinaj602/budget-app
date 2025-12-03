@@ -9,8 +9,7 @@ class AuthState {
   final bool hasPin;
   final bool locked;
   const AuthState({required this.hasPin, required this.locked});
-  AuthState copyWith({bool? hasPin, bool? locked}) =>
-      AuthState(
+  AuthState copyWith({bool? hasPin, bool? locked}) => AuthState(
         hasPin: hasPin ?? this.hasPin,
         locked: locked ?? this.locked,
       );
@@ -59,7 +58,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return ok;
   }
 
-  Future<bool> changePin({required String currentPin, required String newPin}) async {
+  Future<bool> changePin(
+      {required String currentPin, required String newPin}) async {
     if (!state.hasPin) {
       await setPin(newPin);
       return true;
@@ -92,7 +92,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   List<int> _hashPin(String pin, List<int> salt) {
-    final bytes = <int>[]..addAll(utf8.encode(pin))..addAll(salt);
+    final bytes = <int>[]
+      ..addAll(utf8.encode(pin))
+      ..addAll(salt);
     final digest = sha256.convert(bytes);
     return digest.bytes;
   }
@@ -117,4 +119,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier());
+final authProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier());

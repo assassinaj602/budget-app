@@ -268,12 +268,10 @@ class _CategoryManagementScreenState
           children: [
             Text('$transactionCount transactions',
                 style: TextStyle(
-                    color:
-                        Theme.of(context).colorScheme.onSurfaceVariant)),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
             Text('Total spent: ${totalSpent.toStringAsFixed(0)}',
                 style: TextStyle(
-                    color:
-                        Theme.of(context).colorScheme.onSurfaceVariant)),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
         trailing: PopupMenuButton<String>(

@@ -120,7 +120,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
-  void _showAddTransactionModal(BuildContext context) => showAddTransactionModal(context);
+  void _showAddTransactionModal(BuildContext context) =>
+      showAddTransactionModal(context);
 
   Widget _buildQuickActionsSection(BuildContext context) {
     return Column(
@@ -180,8 +181,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const BudgetGoalsScreen()),
+                  MaterialPageRoute(builder: (_) => const BudgetGoalsScreen()),
                 );
               },
             ),
@@ -195,15 +195,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (_) => const EnhancedReportsScreen()),
+              MaterialPageRoute(builder: (_) => const EnhancedReportsScreen()),
             );
           },
         ),
       ],
     );
   }
-
 
   Widget _buildQuickActionTile({
     required IconData icon,

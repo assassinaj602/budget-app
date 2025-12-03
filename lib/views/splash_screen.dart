@@ -45,7 +45,8 @@ class _SplashScreenState extends State<SplashScreen>
         final auth = container.read(authProvider);
         if (auth.hasPin && auth.locked) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PinLockScreen(mode: PinMode.unlock)),
+            MaterialPageRoute(
+                builder: (_) => const PinLockScreen(mode: PinMode.unlock)),
           );
         } else {
           Navigator.of(context).pushReplacement(
@@ -171,11 +172,13 @@ class _SplashScreenState extends State<SplashScreen>
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 28,
-                                        color: cs.onPrimary.withOpacity(_fadeAnim.value),
+                                        color: cs.onPrimary
+                                            .withOpacity(_fadeAnim.value),
                                         letterSpacing: 1.1,
                                         shadows: [
                                           Shadow(
-                                            color: cs.onPrimary.withOpacity(0.25),
+                                            color:
+                                                cs.onPrimary.withOpacity(0.25),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),

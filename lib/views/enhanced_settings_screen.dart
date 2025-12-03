@@ -271,7 +271,8 @@ class _EnhancedSettingsScreenState
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PinLockScreen(mode: PinMode.changePin),
+                        builder: (_) =>
+                            const PinLockScreen(mode: PinMode.changePin),
                       ),
                     );
                   },
@@ -917,6 +918,7 @@ class _EnhancedSettingsScreenState
       ),
     );
   }
+
   void _showDeveloperDialog() {
     showDialog(
       context: context,
@@ -972,7 +974,8 @@ class _EnhancedSettingsScreenState
                   setDialogState(() => _notificationsEnabled = value);
                   setState(() => _notificationsEnabled = value);
                   if (value) {
-                    NotificationService().scheduleDailySummary(hour: 18, minute: 0);
+                    NotificationService()
+                        .scheduleDailySummary(hour: 18, minute: 0);
                   } else {
                     NotificationService().cancelAllNotifications();
                   }
@@ -997,7 +1000,8 @@ class _EnhancedSettingsScreenState
                     initialTime: const TimeOfDay(hour: 18, minute: 0),
                   );
                   if (time != null) {
-                    NotificationService().scheduleDailySummary(hour: time.hour, minute: time.minute);
+                    NotificationService().scheduleDailySummary(
+                        hour: time.hour, minute: time.minute);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content:

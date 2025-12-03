@@ -297,25 +297,27 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
       grouped[key]![t.type] = (grouped[key]![t.type] ?? 0.0) + t.amount;
     }
 
-    final keys = grouped.keys.toList()..sort((a, b) {
-      // Attempt to sort by parsed date fragments
-      DateTime parseKey(String k) {
-        if (_selectedTimeframe == 'Year') {
-          return DateTime(int.tryParse(k) ?? 0);
-        }
-        // For week/month, fallback to first day of month
-        final parts = k.split(' ');
-        if (parts.length >= 2 && int.tryParse(parts.last) != null) {
-          try {
-            return DateFormat('MMM yyyy').parse('${parts[0]} ${parts[1]}');
-          } catch (_) {
-            return DateTime.now();
+    final keys = grouped.keys.toList()
+      ..sort((a, b) {
+        // Attempt to sort by parsed date fragments
+        DateTime parseKey(String k) {
+          if (_selectedTimeframe == 'Year') {
+            return DateTime(int.tryParse(k) ?? 0);
           }
+          // For week/month, fallback to first day of month
+          final parts = k.split(' ');
+          if (parts.length >= 2 && int.tryParse(parts.last) != null) {
+            try {
+              return DateFormat('MMM yyyy').parse('${parts[0]} ${parts[1]}');
+            } catch (_) {
+              return DateTime.now();
+            }
+          }
+          return DateTime.now();
         }
-        return DateTime.now();
-      }
-      return parseKey(a).compareTo(parseKey(b));
-    });
+
+        return parseKey(a).compareTo(parseKey(b));
+      });
 
     return SingleChildScrollView(
       child: Padding(
@@ -400,13 +402,13 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                           minX: 0,
                           maxX: (keys.length - 1).toDouble(),
                           minY: 0,
-                          maxY: grouped.values
-                                  .expand((m) => m.values)
-                                  .isNotEmpty
-                              ? grouped.values
-                                      .expand((m) => m.values)
-                                      .reduce((a, b) => a > b ? a : b) * 1.2
-                              : 1000,
+                          maxY:
+                              grouped.values.expand((m) => m.values).isNotEmpty
+                                  ? grouped.values
+                                          .expand((m) => m.values)
+                                          .reduce((a, b) => a > b ? a : b) *
+                                      1.2
+                                  : 1000,
                           lineBarsData: [
                             LineChartBarData(
                               spots: keys.map((k) {
@@ -426,8 +428,8 @@ class _EnhancedReportsScreenState extends ConsumerState<EnhancedReportsScreen>
                             LineChartBarData(
                               spots: keys.map((k) {
                                 final i = keys.indexOf(k);
-                                return FlSpot(
-                                    i.toDouble(), grouped[k]!['expense'] ?? 0.0);
+                                return FlSpot(i.toDouble(),
+                                    grouped[k]!['expense'] ?? 0.0);
                               }).toList(),
                               isCurved: true,
                               color: Colors.red.shade600,

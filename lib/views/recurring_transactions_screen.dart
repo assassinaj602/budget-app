@@ -623,9 +623,10 @@ class _RecurringTransactionsScreenState
                           'Add Recurring Transaction',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ),
                     ],
@@ -655,59 +656,86 @@ class _RecurringTransactionsScreenState
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: selectedType,
-                            decoration: const InputDecoration(labelText: 'Type'),
+                            decoration:
+                                const InputDecoration(labelText: 'Type'),
                             items: const [
-                              DropdownMenuItem(value: 'expense', child: Text('Expense')),
-                              DropdownMenuItem(value: 'income', child: Text('Income')),
+                              DropdownMenuItem(
+                                  value: 'expense', child: Text('Expense')),
+                              DropdownMenuItem(
+                                  value: 'income', child: Text('Income')),
                             ],
                             onChanged: (v) {
-                              if (v != null) setSheetState(() => selectedType = v);
+                              if (v != null)
+                                setSheetState(() => selectedType = v);
                             },
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
                             value: selectedCategory,
-                            decoration: const InputDecoration(labelText: 'Category'),
+                            decoration:
+                                const InputDecoration(labelText: 'Category'),
                             items: const [
-                              DropdownMenuItem(value: 'Food', child: Text('Food')),
-                              DropdownMenuItem(value: 'Transportation', child: Text('Transportation')),
-                              DropdownMenuItem(value: 'Entertainment', child: Text('Entertainment')),
-                              DropdownMenuItem(value: 'Bills', child: Text('Bills')),
-                              DropdownMenuItem(value: 'Salary', child: Text('Salary')),
-                              DropdownMenuItem(value: 'Other', child: Text('Other')),
+                              DropdownMenuItem(
+                                  value: 'Food', child: Text('Food')),
+                              DropdownMenuItem(
+                                  value: 'Transportation',
+                                  child: Text('Transportation')),
+                              DropdownMenuItem(
+                                  value: 'Entertainment',
+                                  child: Text('Entertainment')),
+                              DropdownMenuItem(
+                                  value: 'Bills', child: Text('Bills')),
+                              DropdownMenuItem(
+                                  value: 'Salary', child: Text('Salary')),
+                              DropdownMenuItem(
+                                  value: 'Other', child: Text('Other')),
                             ],
                             onChanged: (v) {
-                              if (v != null) setSheetState(() => selectedCategory = v);
+                              if (v != null)
+                                setSheetState(() => selectedCategory = v);
                             },
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<RecurrenceFrequency>(
                             value: selectedFrequency,
-                            decoration: const InputDecoration(labelText: 'Frequency'),
+                            decoration:
+                                const InputDecoration(labelText: 'Frequency'),
                             items: const [
-                              DropdownMenuItem(value: RecurrenceFrequency.daily, child: Text('Daily')),
-                              DropdownMenuItem(value: RecurrenceFrequency.weekly, child: Text('Weekly')),
-                              DropdownMenuItem(value: RecurrenceFrequency.monthly, child: Text('Monthly')),
-                              DropdownMenuItem(value: RecurrenceFrequency.yearly, child: Text('Yearly')),
+                              DropdownMenuItem(
+                                  value: RecurrenceFrequency.daily,
+                                  child: Text('Daily')),
+                              DropdownMenuItem(
+                                  value: RecurrenceFrequency.weekly,
+                                  child: Text('Weekly')),
+                              DropdownMenuItem(
+                                  value: RecurrenceFrequency.monthly,
+                                  child: Text('Monthly')),
+                              DropdownMenuItem(
+                                  value: RecurrenceFrequency.yearly,
+                                  child: Text('Yearly')),
                             ],
                             onChanged: (v) {
-                              if (v != null) setSheetState(() => selectedFrequency = v);
+                              if (v != null)
+                                setSheetState(() => selectedFrequency = v);
                             },
                           ),
                           const SizedBox(height: 16),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Start Date'),
-                            subtitle: Text(DateFormat('MMM dd, yyyy').format(startDate)),
+                            subtitle: Text(
+                                DateFormat('MMM dd, yyyy').format(startDate)),
                             trailing: const Icon(Icons.calendar_today),
                             onTap: () async {
                               final picked = await showDatePicker(
                                 context: ctx,
                                 initialDate: startDate,
                                 firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                                lastDate: DateTime.now()
+                                    .add(const Duration(days: 365)),
                               );
-                              if (picked != null) setSheetState(() => startDate = picked);
+                              if (picked != null)
+                                setSheetState(() => startDate = picked);
                             },
                           ),
                           const SizedBox(height: 16),
@@ -728,7 +756,8 @@ class _RecurringTransactionsScreenState
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        if (titleController.text.isEmpty || amountController.text.isEmpty) {
+                        if (titleController.text.isEmpty ||
+                            amountController.text.isEmpty) {
                           CustomSnackBar.show(
                             ctx,
                             message: 'Please fill in title and amount',
@@ -745,9 +774,13 @@ class _RecurringTransactionsScreenState
                           frequency: selectedFrequency,
                           startDate: startDate,
                           isActive: true,
-                          note: noteController.text.isEmpty ? null : noteController.text,
+                          note: noteController.text.isEmpty
+                              ? null
+                              : noteController.text,
                         );
-                        ref.read(appProvider.notifier).addRecurringTransaction(recurring);
+                        ref
+                            .read(appProvider.notifier)
+                            .addRecurringTransaction(recurring);
                         Navigator.pop(ctx);
                         CustomSnackBar.show(
                           context,

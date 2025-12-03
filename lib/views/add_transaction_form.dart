@@ -81,9 +81,8 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fieldFill = isDark ? cs.surfaceVariant : Colors.grey.shade50;
     final borderColor = isDark ? cs.outlineVariant : Colors.grey.shade300;
-    final focusColor = _selectedType == 'income'
-        ? Colors.green.shade600
-        : Colors.red.shade600;
+    final focusColor =
+        _selectedType == 'income' ? Colors.green.shade600 : Colors.red.shade600;
     final textColor = cs.onSurface;
 
     return Center(
@@ -107,7 +106,8 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                     children: [
                       Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _selectedType = 'expense'),
+                          onTap: () =>
+                              setState(() => _selectedType = 'expense'),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
@@ -287,10 +287,9 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                           borderSide: BorderSide(color: focusColor, width: 2),
                         ),
                       ),
-                      validator: (_) =>
-                          _selectedCategory == null
-                              ? 'Please select a category'
-                              : null,
+                      validator: (_) => _selectedCategory == null
+                          ? 'Please select a category'
+                          : null,
                       onFieldSubmitted: (_) => onFieldSubmitted(),
                       onChanged: (v) => _debouncer.run(() => setState(() {})),
                     );
@@ -329,8 +328,8 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                     await showModalBottomSheet(
                       context: context,
                       shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(24)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(24)),
                       ),
                       builder: (ctx) {
                         DateTime temp = _selectedDate;
@@ -462,8 +461,9 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                         icon: const Icon(Icons.save),
                         label: const Text('Save as Template'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              canSaveTemplate ? cs.primary : Colors.grey.shade400,
+                          backgroundColor: canSaveTemplate
+                              ? cs.primary
+                              : Colors.grey.shade400,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48),
                           shape: RoundedRectangleBorder(
@@ -514,14 +514,16 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                                 }
 
                                 try {
-                                  await ref.read(appProvider.notifier).addTransaction(
+                                  await ref
+                                      .read(appProvider.notifier)
+                                      .addTransaction(
                                         Transaction(
                                           id: DateTime.now().toString(),
                                           title: _titleController.text,
                                           amount: amount,
                                           date: _selectedDate,
-                                          category:
-                                              _selectedCategory?.name ?? 'Uncategorized',
+                                          category: _selectedCategory?.name ??
+                                              'Uncategorized',
                                           type: _selectedType,
                                           note: _noteController.text.isEmpty
                                               ? null
@@ -532,11 +534,11 @@ class _AddTransactionFormState extends ConsumerState<AddTransactionForm> {
                                   if (!mounted) return;
                                   navigator.pop();
                                   CustomSnackBar.show(
-                                      context,
-                                      message:
-                                          '${_selectedType == "income" ? "Income" : "Expense"} added successfully!',
-                                      type: SnackBarType.success,
-                                    );
+                                    context,
+                                    message:
+                                        '${_selectedType == "income" ? "Income" : "Expense"} added successfully!',
+                                    type: SnackBarType.success,
+                                  );
                                 } catch (e) {
                                   setState(() => _isSubmitting = false);
                                   if (mounted) {
@@ -653,6 +655,7 @@ class _Debouncer {
     _timer?.cancel();
     _timer = Timer(delay, action);
   }
+
   void dispose() => _timer?.cancel();
 }
 

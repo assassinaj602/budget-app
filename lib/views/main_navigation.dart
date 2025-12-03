@@ -23,7 +23,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation>
   int _currentIndex = 0;
   late PageController _pageController;
   DateTime? _backgroundEnteredAt;
-  static const Duration _lockThreshold = Duration(seconds: 20); // Lock only after 20s background
+  static const Duration _lockThreshold =
+      Duration(seconds: 20); // Lock only after 20s background
   bool _lockPresented = false;
 
   final List<Widget> _screens = [
@@ -45,11 +46,11 @@ class _MainNavigationState extends ConsumerState<MainNavigation>
         _lockPresented = true;
         Navigator.of(context, rootNavigator: true)
             .push(
-              MaterialPageRoute(
-                fullscreenDialog: true,
-                builder: (_) => const PinLockScreen(mode: PinMode.unlock),
-              ),
-            )
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => const PinLockScreen(mode: PinMode.unlock),
+          ),
+        )
             .whenComplete(() {
           if (mounted) setState(() => _lockPresented = false);
         });
@@ -156,48 +157,48 @@ class _MainNavigationState extends ConsumerState<MainNavigation>
     final isSelected = _currentIndex == index;
     final cs = Theme.of(context).colorScheme;
     final navInk = InkWell(
-        onTap: () {
-          if (index == 1) {
-            // Use Transaction nav item as quick add action matching dashboard style.
-            showAddTransactionModal(context);
-            return; // Do not change page index
-          }
-          _onTabTapped(index);
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: isSelected ? cs.primary.withOpacity(0.15) : Colors.transparent,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? cs.primary : cs.onSurfaceVariant,
-                size: 22,
-              ),
-              const SizedBox(height: 2),
-              Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isSelected ? cs.primary : cs.onSurfaceVariant,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
+      onTap: () {
+        if (index == 1) {
+          // Use Transaction nav item as quick add action matching dashboard style.
+          showAddTransactionModal(context);
+          return; // Do not change page index
+        }
+        _onTabTapped(index);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? cs.primary.withOpacity(0.15) : Colors.transparent,
         ),
-      );
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              size: 22,
+            ),
+            const SizedBox(height: 2),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return Expanded(
       child: index == 1

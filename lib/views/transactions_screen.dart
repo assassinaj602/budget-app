@@ -14,7 +14,7 @@ class TransactionsScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
-  with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin {
   String _selectedFilter = 'All'; // All, Income, Expense
   String _selectedSort = 'Date'; // Date, Amount, Category
   String _searchQuery = '';
@@ -46,20 +46,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
       filtered.sort((a, b) => b.date.compareTo(a.date));
     } else if (_selectedSort == 'Amount') {
       filtered.sort((a, b) => b.amount.compareTo(a.amount));
-                            return TweenAnimationBuilder<double>(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOut,
-                              tween: Tween(begin: 0, end: 1),
-                              builder: (context, value, child) {
-                                return Opacity(
-                                  opacity: value,
-                                  child: Transform.translate(
-                                    offset: Offset(0, (1 - value) * 12),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Card(
+    } else if (_selectedSort == 'Category') {
       filtered.sort((a, b) => a.category.compareTo(b.category));
     }
 
